@@ -18,7 +18,7 @@ while (cap.isOpened()):
     # Threshold at 80%
     margin = THRESHOLD_PERCENT
     thresh = int(maxVal * margin)
-    print "Threshold: " + thresh
+    print "Threshold: %f" % thresh
 
     ret, thresh_img = cv2.threshold(gray, thresh, 255, cv2.THRESH_BINARY)
 
