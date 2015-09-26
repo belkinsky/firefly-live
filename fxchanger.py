@@ -84,7 +84,7 @@ class MidiCcFx():
     """An effect that implemented with MIDI Control Change messages.
     I.e. each change of the FX emits a corresponding MIDI CC message."""
     
-    def __init__(self, midi_out, channel_num=0, controller_num=0, default_val=0):
+    def __init__(self, midi_out, channel_num=0, controller_num=0, default_val=0.5):
         self.midi_out = midi_out
         self.channel_num = channel_num
         self.controller_num = controller_num
@@ -120,10 +120,8 @@ class FxChanger():
         # TODO: make some GUI to adjust them.
         o = self.midi_out
         self.fx_list = [
-            MidiCcFx(o, channel_num=0, controller_num=0),
-            MidiCcFx(o, channel_num=0, controller_num=1),
-            MidiCcFx(o, channel_num=0, controller_num=2),
-            MidiCcFx(o, channel_num=0, controller_num=3),
+            MidiCcFx(o, channel_num=7, controller_num=0),
+            MidiCcFx(o, channel_num=10, controller_num=1),
         ]
     
     def set(self, fx_id, fx_val):

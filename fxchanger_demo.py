@@ -9,8 +9,8 @@ def run_demo():
     for fx_id, fx in enumerate(fxchanger.fx_list):
         gradually_increase(fx_id, step=0.25, pause=2) 
         gradually_increase(fx_id, step=0.1, pause=0.5)
-        wobble(fx_id, val1=0.4, val2=0.6, times=10, pause=0.2)
-        wobble(fx_id, val1=0.2, val2=0.8, times=20, pause=0.1)
+        wobble(fx_id, val1=0.3, val2=0.7, times=5, pause=1)
+        wobble(fx_id, val1=0.1, val2=0.9, times=20, pause=0.1)
 
 
 def gradually_increase(fx_id, step, pause):
@@ -29,6 +29,7 @@ def wobble(fx_id, val1, val2, times, pause):
         fxchanger.set(fx_id, val1)
         sleep(pause)
         fxchanger.set(fx_id, val2)
+        sleep(pause)
     fxchanger.reset(fx_id)
 
 
