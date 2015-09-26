@@ -2,15 +2,17 @@ import math
 
 import numpy as np
 import cv2
+import time
+
 
 MIN_AREA = 100
 MAX_AREA = 1200
 RECTANGLE_COLOR = (0, 255, 0)
 CIRCLE_COLOR = (255, 0, 0)
-THRESHOLD_PERCENT = 0.8
+THRESHOLD_PERCENT = 0.7
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 
-cap = cv2.VideoCapture("videos/1.mp4")
+cap = cv2.VideoCapture(0)
 
 width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -37,13 +39,15 @@ class Light:
         return math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1))
 
 prev_lights = []
+start = time.clock();
 
 while (cap.isOpened()):
     ret, frame = cap.read()
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    blur = cv2.medianBlur(gray, 15)
 
-    [minVal, maxVal, minLoc, maxLoc] = cv2.minMaxLoc(gray)
+    [minVal, maxVal, minLoc, maxLoc] = cv2.minMaxLoc(blur)
     # print minVal, maxVal, minLoc, maxLoc
 
     # Threshold at 80%
@@ -51,9 +55,11 @@ while (cap.isOpened()):
     thresh = int(maxVal * margin)
     # print "Threshold: %f" % thresh
 
-    ret, thresh_img = cv2.threshold(gray, thresh, 255, cv2.THRESH_BINARY)
+    ret, thresh_img = cv2.threshold(blur, thresh, 255, cv2.THRESH_BINARY)
 
-    image, contours, hierarchy = cv2.findContours(thresh_img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    cv2.imshow('TrashImage', thresh_img)
+
+    image, contours, hierarchy = cv2.findContours(thresh_img, cv2.RETR_LIST , cv2.CHAIN_APPROX_NONE)
 
     curr_lights = []
 
@@ -74,7 +80,7 @@ while (cap.isOpened()):
             for prev_id, prev in enumerate(prev_lights):
                 distance = light.distance(prev)
                 # print "distance: {}".format(distance)
-                if (distance < 20):
+                if (distance < 120):
                     light.color = prev.color
                     lights_pairs.append([prev, light])
                     pair_for_current_is_founded = True
@@ -86,21 +92,26 @@ while (cap.isOpened()):
 
             x, y, w, h = cv2.boundingRect(c)
             cv2.rectangle(frame, (x, y), (x + w, y + h), light.color, 3)
-            cv2.circle(frame, (int(light.mass_center[0]), int(light.mass_center[1])), 1, CIRCLE_COLOR, 1)
+            #cv2.circle(frame, (int(light.mass_center[0]), int(light.mass_center[1])), 1, CIRCLE_COLOR, 1)
 
-    lost_lights = []
-    for idx, val in enumerate(founded_pairs_for_previous_lights):
-        if (val == False):
-            lost_lights.append(prev_lights[idx])
+    #lost_lights = []
+    #for idx, val in enumerate(founded_pairs_for_previous_lights):
+    #    if (val == False):
+    #        lost_lights.append(prev_lights[idx])
 
     prev_lights = curr_lights
 
-    cv2.imshow('TrashImage', thresh_img)
-
     message("Frame size: {} x {}".format(width, height), (10, 20), frame)
     message("Numbers of lights: {}".format(len(curr_lights)), (10, 35), frame)
+    end = time.clock()
+    framecost = end-start
+    message("Frame cost, ms: {}".format(framecost), (10, 50), frame)
+    start = time.clock();
 
     cv2.imshow('FrameImage', frame)
+    #cv2.imshow('blurred', blur)
+
+    #cv2.imshow('grayscale', gray)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
