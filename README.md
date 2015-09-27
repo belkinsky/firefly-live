@@ -1,6 +1,7 @@
-![Firefly Live](https://github.com/belkinsky/firefly-live/blob/master/logo.jpg =250x250)
+![Firefly Live](https://github.com/belkinsky/firefly-live/blob/master/logo.jpg)
 
 # Firefly Live
+
 We are the team of enthusiasts, we are developing a software for musicians to allow the audience to fuse into
 a single whole with the musician and all around,  to create a music together with help of illuminations,
 dance and computer vision technology.
