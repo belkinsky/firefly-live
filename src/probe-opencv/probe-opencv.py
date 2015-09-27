@@ -50,6 +50,14 @@ def calc_distance(p1, p2):
     return math.sqrt(dX * dX + dY * dY)
 
 
+def combine_images(src, dst, x, y):
+    for c in range(0, 3):
+        dst[y:y + src.shape[0], x:x + src.shape[1], c] = src[:, :, c] * (src[:, :, 3] / 255.0) + dst[y:y + src.shape[0],
+                                                                                                 x:x + src.shape[1],
+                                                                                                 c] * (1.0 - src[:, :,
+                                                                                                             3] / 255.0)
+
+
 class Plot:
     def __init__(self, x, y, w, h):
         self.x = x
@@ -213,6 +221,7 @@ prev_lights = []
 modulator = FxModulator()
 
 start_time = time.time() - 30  # pretend we have started earlier
+logo = cv2.imread('logo.png', -1)
 
 while (cap.isOpened()):
     # time.sleep(0.005)
@@ -309,7 +318,7 @@ while (cap.isOpened()):
 
     fps = 1.0 / dT
     message(
-        "Frame size: {} x {}. Fps: {}. Brightness: {}. DistanceC: {}"
+        "Frame size: {} x {}. Fps: {:1.1f}. Brightness: {}. DistanceC: {}"
             .format(width, height, fps, brightness, distance_coefficient), (10, 20), frame)
 
     message("Frame dT, ms: {}".format((dT) * 1000), (10, 50), frame)
@@ -317,6 +326,8 @@ while (cap.isOpened()):
     message("Numbers of lights: {}".format(len(curr_lights)), (10, 35), frame)
 
     pl.draw(frame, A, B, C)
+    combine_images(logo, frame, width - 125, 10)
+
     cv2.imshow('Captured', frame)
 
     key = cv2.waitKey(1)
