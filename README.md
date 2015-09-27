@@ -1,4 +1,4 @@
-![Firefly Live](https://github.com/belkinsky/firefly-live/blob/master/logo.jpg =250x)
+![Firefly Live](https://github.com/belkinsky/firefly-live/blob/master/logo.jpg =250x250)
 
 # Firefly Live
 We are the team of enthusiasts, we are developing a software for musicians to allow the audience to fuse into
