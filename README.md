@@ -1,4 +1,4 @@
-![Firefly Live](https://github.com/belkinsky/firefly-live/blob/master/logo.jpg)
+![Firefly Live](https://github.com/belkinsky/firefly-live/blob/master/logo_small.jpg)
 
 # Firefly Live
 
