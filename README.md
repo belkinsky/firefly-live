@@ -8,3 +8,9 @@ dance and computer vision technology.
 
 The current prototype has been made on a hackday http://hackday.ru/hackday-39/projects#project-1395.
 It is a tool for generating MIDI control events based on video. It uses OpenCV to track multiple particles in realtime.
+
+# License
+
+And of course:
+
+MIT: http://rem.mit-license.org
