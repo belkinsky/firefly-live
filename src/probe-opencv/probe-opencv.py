@@ -1,8 +1,9 @@
 import math
 import time
-
 import numpy as np
 import cv2
+
+import fxchanger
 
 
 MAX_VALUE = 9999999999999
@@ -89,6 +90,7 @@ class Light:
 
 
 prev_lights = []
+fx = fxchanger.FxChanger()
 
 while (cap.isOpened()):
     start_time = time.time()
