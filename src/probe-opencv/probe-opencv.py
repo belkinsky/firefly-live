@@ -1,9 +1,10 @@
 import math
-import time
+
 import numpy as np
 import cv2
 
-#import fxchanger
+
+# import fxchanger
 from vector import Vector
 import time
 
@@ -17,20 +18,19 @@ CIRCLE_COLOR = (255, 0, 0)
 THRESHOLD_PERCENT = 0.7
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 
-SPEED_THRESHOLD = 100 #pixels per second
-
+SPEED_THRESHOLD = 100  # pixels per second
 
 ATTACK_SPEED_A = 0.025
 DECAY_DECREMENT_A = 0.025
 ATTACK_SPEED_B = 0.05
 DECAY_DECREMENT_B = 0.04
-#ATTACK_SPEED_C = 0.1
-#DECAY_DECREMENT_C = 0.2
+# ATTACK_SPEED_C = 0.1
+# DECAY_DECREMENT_C = 0.2
 
 cap = cv2.VideoCapture(0)
 
-#wont work for realtime video
-#fps = cap.get(cv2.CAP_PROP_FPS)
+# wont work for realtime video
+# fps = cap.get(cv2.CAP_PROP_FPS)
 width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 distance_coefficient = 30
@@ -50,10 +50,57 @@ def calc_distance(p1, p2):
     return math.sqrt(dX * dX + dY * dY)
 
 
+class Plot:
+    def __init__(self, x, y, w, h):
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+
+    def draw(self, img, A, B, C):
+        # cv2.fillConvexPoly(img, np.array(
+        # [[self.x, self.y],
+        # [self.x + self.w, self.y],
+        # [self.x + self.w, self.y + self.h],
+        # [self.x, self.y + self.h]], np.int32), (200, 200, 200))
+
+        dW = self.w / 4
+        dH = self.h / 2
+        r = min(self.w, self.h) / 3
+
+        cv2.circle(img, (int(self.x + dW), int(self.y + dH)), int(r), (255, 255, 255), 1)
+        cv2.circle(img, (int(self.x + dW), int(self.y + dH)), int(A * r), (127, 127 + 20, 127 + 50), cv2.FILLED)
+
+        cv2.circle(img, (int(self.x + dW * 2), int(self.y + dH)), int(r), (255, 255, 255), 1)
+        cv2.circle(img, (int(self.x + dW * 2), int(self.y + dH)), int(B * r), (127, 127 + 50, 127 + 20), cv2.FILLED)
+
+        cv2.circle(img, (int(self.x + dW * 3), int(self.y + dH)), int(r), (255, 255, 255), 1)
+        cv2.circle(img, (int(self.x + dW * 3), int(self.y + dH)), int(C * r), (127 + 50, 127, 127 + 20), cv2.FILLED)
+
+        # cv2.ellipse(img, (int(self.x + dW), int(self.y + dH)), (int(r), int(r)), 20, 0, int(360 * A),
+        # (127, 127 + 20, 127 + 50), cv2.FILLED)
+        #
+        # cv2.ellipse(img, (int(self.x + dW), int(self.y + dH)), (int(r), int(r)), 0, 0, 360, (0, 0, 0), 1)
+        #
+        # cv2.ellipse(img, (int(self.x + dW * 2), int(self.y + dH)), (int(r), int(r)), 20, 0, int(360 * B),
+        # (127, 127 + 50, 127 + 20), cv2.FILLED)
+        #
+        # cv2.ellipse(img, (int(self.x + dW * 2), int(self.y + dH)), (int(r), int(r)), 0, 0, 360, (0, 0, 0), 1)
+        #
+        # cv2.ellipse(img, (int(self.x + dW * 3), int(self.y + dH)), (int(r), int(r)), 20, 0, int(360 * C),
+        # (127 + 50, 127, 127 + 20), cv2.FILLED)
+        #
+        # cv2.ellipse(img, (int(self.x + dW * 3), int(self.y + dH)), (int(r), int(r)), 0, 0, 360, (0, 0, 0), 1)
+
+
+pl = Plot(0, height - 120, width, 120)
+
+
 class Point:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+
 
 class Vector2:
     def __init__(self, start, end):
@@ -103,6 +150,7 @@ class Light:
                 return self.vec().len() / self.dT
 
     MATURITY_TIME = 0.2
+
     def is_significant(self):
         return self.speed() > SPEED_THRESHOLD and ((time.time() - self.born) > self.MATURITY_TIME)
 
@@ -114,13 +162,13 @@ class FxModulator:
 
     def modulate(self, lights_list):
 
-        summ_velocity = Vector(0 ,0)
+        summ_velocity = Vector(0, 0)
         summ_length = 0
         for light in lights_list:
             start_point = light.vec().start
             end_point = light.vec().end
             velocity = Vector(end_point.x, end_point.y) - Vector(start_point.x, start_point.y)
-            if(not light.is_significant()):
+            if (not light.is_significant()):
                 continue
 
             summ_velocity += velocity
@@ -129,12 +177,12 @@ class FxModulator:
         summ_vel_magnitude = summ_velocity.norm()
 
 
-        #some kind of velocity coherence
+        # some kind of velocity coherence
 
 
         # C - fast moving fx (period should be about 0.5..1s)
         if summ_length > 0:
-            coherence = summ_vel_magnitude / summ_length #should be in range 0..1
+            coherence = summ_vel_magnitude / summ_length  # should be in range 0..1
             self.accumulated_C = coherence
         else:
             coherence = 0
@@ -149,25 +197,22 @@ class FxModulator:
         self.accumulated_B += self.accumulated_C * ATTACK_SPEED_B
         self.accumulated_B -= DECAY_DECREMENT_B
 
-        self.accumulated_A = np.clip(self.accumulated_A, 0,1.0)
-        self.accumulated_B = np.clip(self.accumulated_B, 0,1.0)
-        self.accumulated_C = np.clip(self.accumulated_C, 0,1.0)
+        self.accumulated_A = np.clip(self.accumulated_A, 0, 1.0)
+        self.accumulated_B = np.clip(self.accumulated_B, 0, 1.0)
+        self.accumulated_C = np.clip(self.accumulated_C, 0, 1.0)
 
         print("ABC=", self.accumulated_A, self.accumulated_B, self.accumulated_C)
 
         return self.accumulated_A, self.accumulated_B, self.accumulated_C
 
 
-
-
-
 prev_lights = []
 
-#Failed under Windows 8
-#fx_changer = fxchanger.FxChanger()
+# Failed under Windows 8
+# fx_changer = fxchanger.FxChanger()
 modulator = FxModulator()
 
-start_time = time.time() - 30 #pretend we have started earlier
+start_time = time.time() - 30  # pretend we have started earlier
 
 while (cap.isOpened()):
     # time.sleep(0.005)
@@ -180,19 +225,18 @@ while (cap.isOpened()):
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     blur = cv2.medianBlur(gray, 15)
-    #cv2.imshow('Blured', blur)
+    # cv2.imshow('Blured', blur)
 
     # blur = cv2.GaussianBlur(gray, (7, 7), 8)
 
     [minVal, maxVal, minLoc, maxLoc] = cv2.minMaxLoc(gray)
 
     margin = THRESHOLD_PERCENT
-    thresh = np.clip(int(maxVal * margin),48,255)
+    thresh = np.clip(int(maxVal * margin), 48, 255)
     # print "Threshold: %f" % thresh
 
     ret, thresh_img = cv2.threshold(blur, thresh, 255, cv2.THRESH_BINARY)
     cv2.imshow('Threshold', thresh_img)
-
 
     image, contours, hierarchy = cv2.findContours(thresh_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 
@@ -217,7 +261,6 @@ while (cap.isOpened()):
                     min_prev_distance = d
                     min_prev_idx = prev_id
 
-
             if min_prev_idx > -1:
                 prev = prev_lights[min_prev_idx]
                 if (min_prev_distance < (prev.radius + light.radius) / 2 + distance_coefficient):
@@ -229,13 +272,13 @@ while (cap.isOpened()):
                     dX = light.center.x - prev.center.x
                     dY = light.center.y - prev.center.y
 
-                    if(light.is_significant()):
+                    if (light.is_significant()):
                         cv2.arrowedLine(frame,
                                         (int(prev.center.x + dX), int(prev.center.y + dY)),
                                         (int(light.center.x + dX * 2), int(light.center.y + dY * 2)),
                                         RECTANGLE_COLOR, 2)
 
-            if(light.is_significant()):
+            if (light.is_significant()):
                 x, y, w, h = cv2.boundingRect(c)
                 # center, radius = cv2.minEnclosingCircle(c)
                 # cv2.circle(frame, (int(center[0]),int(center[1])), int(radius), CIRCLE_COLOR, 2);
@@ -244,21 +287,21 @@ while (cap.isOpened()):
 
     # lost_lights = []
     # for idx, val in enumerate(founded_pairs_for_previous_lights):
-    #     if (val == False):
-    #         lost_lights.append(prev_lights[idx])
+    # if (val == False):
+    # lost_lights.append(prev_lights[idx])
 
-    print("light speeds:")
-    for l in curr_lights:
-        print l.speed()
+    # print("light speeds:")
+    # for l in curr_lights:
+    # print l.speed()
 
     prev_lights = curr_lights
 
     A, B, C = modulator.modulate(curr_lights)
 
-    #Failed under Windows 8
-    #fx_changer.set(FxChanger.FX_ID.A, A)
-    #fx_changer.set(FxChanger.FX_ID.B, B)
-    #fx_changer.set(FxChanger.FX_ID.C, C)
+    # Failed under Windows 8
+    # fx_changer.set(FxChanger.FX_ID.A, A)
+    # fx_changer.set(FxChanger.FX_ID.B, B)
+    # fx_changer.set(FxChanger.FX_ID.C, C)
 
 
     # cv2.imshow('TrashImage', thresh_img)
@@ -273,6 +316,7 @@ while (cap.isOpened()):
 
     message("Numbers of lights: {}".format(len(curr_lights)), (10, 35), frame)
 
+    pl.draw(frame, A, B, C)
     cv2.imshow('Captured', frame)
 
     key = cv2.waitKey(1)
