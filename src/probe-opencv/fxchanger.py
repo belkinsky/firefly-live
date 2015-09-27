@@ -114,7 +114,12 @@ class FxChanger():
     def clean_midi_out(self):
         print("Closing MIDI device")
         self.midi_out.close()
-        
+
+    class FX_ID:
+        A = 0
+        B = 1
+        C = 2
+
     def init_fx_list(self):
         # MIDI channels/controllers are hardcoded.
         # TODO: make some GUI to adjust them.
@@ -122,6 +127,7 @@ class FxChanger():
         self.fx_list = [
             MidiCcFx(o, channel_num=7, controller_num=0),
             MidiCcFx(o, channel_num=10, controller_num=1),
+            MidiCcFx(o, channel_num=14, controller_num=42), #TODO: set actual channel and controller
         ]
     
     def set(self, fx_id, fx_val):
