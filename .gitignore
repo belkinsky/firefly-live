@@ -58,3 +58,7 @@ target/
 
 # Idea directory
 .idea
+
+# Eclipse project files
+.project
+.pydevproject
