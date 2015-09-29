@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 
 
-# import fxchanger
+from fxchanger import FxChanger
 from vector import Vector
 import time
 
@@ -216,8 +216,8 @@ class FxModulator:
 
 prev_lights = []
 
-# Failed under Windows 8
-# fx_changer = fxchanger.FxChanger()
+
+fx_changer = FxChanger()
 modulator = FxModulator()
 
 start_time = time.time() - 30  # pretend we have started earlier
@@ -307,10 +307,9 @@ while (cap.isOpened()):
 
     A, B, C = modulator.modulate(curr_lights)
 
-    # Failed under Windows 8
-    # fx_changer.set(FxChanger.FX_ID.A, A)
-    # fx_changer.set(FxChanger.FX_ID.B, B)
-    # fx_changer.set(FxChanger.FX_ID.C, C)
+    fx_changer.set(FxChanger.FX_ID.A, A)
+    fx_changer.set(FxChanger.FX_ID.B, B)
+    fx_changer.set(FxChanger.FX_ID.C, C)
 
 
     # cv2.imshow('TrashImage', thresh_img)
