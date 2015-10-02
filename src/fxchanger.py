@@ -1,5 +1,7 @@
 import collections
 import midi
+from midi.output import MidiOutput
+from midi.msg import MidiMsg, MidiCcMsg
 
 class MidiCcFx():
     """An effect that implemented with MIDI Control Change messages.
@@ -17,7 +19,7 @@ class MidiCcFx():
         non-linear (logarithmic, etc) mapping for certain controllers.
         """
         assert 0.00 <= float_val <= 1.00
-        int_val = int(round(float_val * midi.CcMsg.CC_VAL_MAX, 0))
+        int_val = int(round(float_val * MidiCcMsg.CC_VAL_MAX, 0))
         return int_val
     
     def __init__(self, midi_out, channel_num=0, controller_num=0, default_val=0.5):
@@ -28,7 +30,7 @@ class MidiCcFx():
     
     def set(self, fx_val):
         int_val = MidiCcFx.map_float_to_int(fx_val)
-        msg = midi.CcMsg.make(self.channel_num, self.controller_num, int_val)
+        msg = MidiCcMsg.make(self.channel_num, self.controller_num, int_val)
         self.midi_out.write(msg)
         
     def reset(self):
@@ -41,7 +43,7 @@ class FxChanger():
         self.init_fx_list()
         
     def init_midi_out(self, device_id):
-        self.midi_out = midi.Output(device_id)
+        self.midi_out = MidiOutput(device_id)
         self.midi_out.open()
 
     class FX_ID:
