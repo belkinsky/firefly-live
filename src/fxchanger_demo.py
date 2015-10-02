@@ -4,10 +4,11 @@ from numpy import arange
 
 fxchanger = FxChanger()
 
-# run across all available effects
+
 def run_demo():
-    for fx_id, fx in enumerate(fxchanger.fx_list):
-        gradually_increase(fx_id, step=0.25, pause=2) 
+    # run across all available effects
+    for fx_id, _fx in enumerate(fxchanger.fx_list):
+        gradually_increase(fx_id, step=0.25, pause=2)
         gradually_increase(fx_id, step=0.1, pause=0.5)
         wobble(fx_id, val1=0.3, val2=0.7, times=5, pause=1)
         wobble(fx_id, val1=0.1, val2=0.9, times=20, pause=0.1)
@@ -25,7 +26,7 @@ def gradually_increase(fx_id, step, pause):
 
 def wobble(fx_id, val1, val2, times, pause):
     # change the fx value to val1 and val2, back and forth many times
-    for n in range(times):
+    for _n in range(times):
         fxchanger.set(fx_id, val1)
         sleep(pause)
         fxchanger.set(fx_id, val2)
