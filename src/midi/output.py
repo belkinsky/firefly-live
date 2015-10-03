@@ -1,17 +1,45 @@
 import atexit
 import ctypes.util
+from ctypes import c_int, c_int32, c_char_p, c_void_p, POINTER, Structure
+from ctypes import cast, byref
 
 lib_name = ctypes.util.find_library('portmidi')
 libportmidi = ctypes.cdll.LoadLibrary(lib_name)
 
+
+# =============================================================================
+#  typedefs
+# =============================================================================
+
+def _typedef(base_class, new_class_name):
+    """A shortcut for defining new classes with a single line of code."""
+    return type(new_class_name, (base_class,), {})
+
 # typedef enum {...} PmError;
-PmError = ctypes.c_int
+PmError = _typedef(c_int, 'PmError')
+
+# typedef int PmDeviceID;
+PmDeviceID = _typedef(c_int, 'PmDeviceID')
+
+# typedef void PmStream;
+# Note: we can't actually define "void", so we define a pointer to it.
+PmStreamPtr = _typedef(c_void_p, 'PmStreamPtr')
+
+# typedef int32_t PmTimestamp;
+PmTimestamp = _typedef(c_int32, 'PmTimestamp')
+
+# typedef PmTimestamp (*PmTimeProcPtr)(void *time_info);
+PmTimeProcPtr = ctypes.CFUNCTYPE(PmTimestamp, c_void_p)
+
+
+# =============================================================================
+#  function imports
+# =============================================================================
 
 # const char *Pm_GetErrorText( PmError errnum )
 Pm_GetErrorText = libportmidi.Pm_GetErrorText
-Pm_GetErrorText.restype = ctypes.c_char_p
+Pm_GetErrorText.restype = c_char_p
 Pm_GetErrorText.argtypes = (PmError,)
-
 
 def _check_PmError(err_code, *unused_args):
     if err_code:
@@ -38,17 +66,21 @@ Pm_Terminate = _import('Pm_Terminate', PmError)
 #     int32_t latency
 # );
 Pm_OpenOutput = _import('Pm_OpenOutput', PmError,
-                        ctypes.c_void_p, ctypes.c_int32, ctypes.c_void_p,
-                        ctypes.c_int32, ctypes.c_void_p, ctypes.c_void_p,
-                        ctypes.c_int32)
+                        POINTER(PmStreamPtr), PmDeviceID, c_void_p,
+                        c_int32, PmTimeProcPtr, c_void_p,
+                        c_int32)
 
 # PmError Pm_Close( PortMidiStream* stream );
-Pm_Close = _import('Pm_Close', PmError, ctypes.c_void_p)
+Pm_Close = _import('Pm_Close', PmError, PmStreamPtr)
 
-# PmError Pm_WriteShort( PortMidiStream *stream, PmTimestamp when, int32_t
-# msg);
-Pm_WriteShort = _import(
-    'Pm_WriteShort', PmError, ctypes.c_void_p, ctypes.c_int32, ctypes.c_int32)
+# PmError Pm_WriteShort(PortMidiStream *stream, PmTimestamp when, int32_t msg);
+Pm_WriteShort = _import('Pm_WriteShort', PmError,
+                        PmStreamPtr, PmTimestamp, c_int32)
+
+
+# =============================================================================
+#  MidiOutput implementation
+# =============================================================================
 
 
 # TODO: check that all outputs are closed at the time Pm_Terminate is called
@@ -88,19 +120,17 @@ class MidiOutput():
         # The libportmidi allocates a PortMidiStream strcuture and sets our
         # pointer to this strucutre. We pass a reference to this pointer as an
         # argument.
-        stream_p = ctypes.c_void_p(None)   # "struct PortMidiStream *"
-        stream_pp = ctypes.byref(stream_p)  # "struct PortMidiStream **"
-
-        dev_id = ctypes.c_int32(self.dev_id)
+        stream_p = PmStreamPtr()
+        dev_id = PmDeviceID(self.dev_id)
 
         # No buffering at all.
-        drv_info = ctypes.c_void_p(None)
-        buf_size = ctypes.c_int32(0)
-        time_proc = ctypes.c_void_p(None)
-        time_info = ctypes.c_void_p(None)
-        latency = ctypes.c_int32(0)
+        drv_info = c_void_p(None)
+        buf_size = c_int32(0)
+        time_proc = cast(None, PmTimeProcPtr)
+        time_info = c_void_p(None)
+        latency = c_int32(0)
 
-        Pm_OpenOutput(stream_pp, dev_id, drv_info, buf_size,
+        Pm_OpenOutput(byref(stream_p), dev_id, drv_info, buf_size,
                       time_proc, time_info, latency)
         self.stream_p = stream_p
 
@@ -119,11 +149,16 @@ class MidiOutput():
         data1 <<= 8
         data2 <<= 16
 
-        midi_msg = ctypes.c_int32(status | data1 | data2)
-        timestamp = ctypes.c_int32(0)
+        midi_msg = c_int32(status | data1 | data2)
+        timestamp = PmTimestamp(0)
 
         print("send midi message: %s" % str(msg_3_bytes_tuple))
         Pm_WriteShort(self.stream_p, timestamp, midi_msg)
+
+
+# =============================================================================
+#  demo
+# =============================================================================
 
 
 # Play a tiny demo when the file is executed.
