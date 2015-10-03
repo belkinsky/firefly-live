@@ -5,6 +5,8 @@ import ctypes.util
 from ctypes import c_int, c_int32, c_char_p, c_void_p, POINTER, Structure
 from ctypes import cast, byref
 
+__all__ = ['MidiOutput']
+
 lib_name = ctypes.util.find_library('portmidi')
 libportmidi = ctypes.cdll.LoadLibrary(lib_name)
 
