@@ -138,11 +138,10 @@ class MidiOutput():
 
     def __init__(self, device_id=None):
         if device_id is None:
-            device_id = Pm_GetDefaultOutputDeviceID()
+            device_id = Pm_GetDefaultOutputDeviceID().value
+        self.device_id = device_id
 
         device_info = Pm_GetDeviceInfo(device_id).contents
-
-        self.device_id = device_id
         self.device_name = device_info.name
         self.interface_name = device_info.interf
 
