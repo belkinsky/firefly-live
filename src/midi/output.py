@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import atexit
 import ctypes.util
 from ctypes import c_int, c_int32, c_char_p, c_void_p, POINTER, Structure
@@ -123,7 +125,7 @@ class MidiNoOutputException(Exception):
     pass
 
 
-class MidiOutput():
+class MidiOutput:
     """The interface class for the portmidi's PmStream (the output one)
     and various related functions: Pm_OpenOutput/Pm_WriteShort/Pm_Close/etc.
 
@@ -144,6 +146,10 @@ class MidiOutput():
         device_info = Pm_GetDeviceInfo(device_id).contents
         self.device_name = device_info.name
         self.interface_name = device_info.interf
+
+        if isinstance(self.device_name, bytes):
+            self.device_name = self.device_name.decode('utf-8')
+            self.interface_name = self.interface_name.decode('utf-8')
 
         if not device_info.output:
             msg = "Can't create MidiOutput() on a non-output device: %s" % self
