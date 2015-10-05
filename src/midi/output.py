@@ -1,4 +1,39 @@
-#!/usr/bin/env python3
+"""The I/O interface for sending MIDI commands to sound devices.
+
+The module uses the PortMidi library as a backend.
+The PortMidi is a C library, so we use ctypes here to call its functions.
+That implies that the libportmidi (.dll or .so file) must be already installed.
+That also means that we implement our own thing instead of using 'pyportmidi'
+(because of the NIH-syndrome and our desire to use ctypes instead of Cython).
+
+The entry point is the MidiOutput() class.
+It supports two operations:
+1. discovery (listing all available MIDI outputs in the system)
+2. open/write/close (sending MIDI messages to the output)
+
+Basically, the workflow looks like this:
+
+1. You call discover() and get the list of MidiOutput objects:
+>>> available_outputs = MidiOutput.discover()
+[MidiOutput(1, "Sound Card"), MidiOutput(2, "Another Sound Card"), ...]
+
+2. You select a desired output from the list and do the open/write/close stuff:
+>>> with available_outputs[1] as out:
+>>>    out.write((0x90, 65, 127))  # 0x90 - NoteOn command on channel 0
+>>>    out.write((0x80, 65, 127))  # 0x80 - NoteOff command on channel 0
+
+...or you can use direct open()/close() calls, the following code is equivalent
+to the one above that uses the 'with' statement:
+>>> out = available_oututs[1]
+>>> out.open()
+>>> out.write((0x90, 65, 127))
+>>> out.write((0x80, 65, 127))
+>>> out.close()
+
+As you can see, this is a pretty minimalistic and low-level interface,
+it takes binary MIDI messages as input. We don't define any MidiMsg objects
+here, this is done in higher-level modules.
+"""
 
 import atexit
 import ctypes.util
@@ -52,7 +87,8 @@ class PmDeviceInfo(Structure):
                 ('output', c_int),
                 ('opened', c_int)]
 
-# A shortcut for "PmDeviceInfo *" (because in C you never pass it by value).
+# A shortcut for "PmDeviceInfo *". There is no such typedef in the libportmidi,
+# we define it here for simplicity, because we always reference it by pointer.
 PmDeviceInfoPtr = POINTER(PmDeviceInfo)
 
 
@@ -68,6 +104,7 @@ Pm_GetErrorText = libportmidi.Pm_GetErrorText
 Pm_GetErrorText.restype = c_char_p
 Pm_GetErrorText.argtypes = (PmError,)
 
+
 def _check_PmError(err_code, *unused_args):
     if err_code:
         raise MidiPmError(Pm_GetErrorText(err_code))
@@ -77,6 +114,8 @@ def _import(fn_name, restype, *argtypes):
     fn = getattr(libportmidi, fn_name)
     fn.restype = restype
     fn.argtypes = argtypes
+    # Here is a trick: the MidiPmError() is raised automatically when any
+    # imported function returns an eror code.
     if restype == PmError:
         fn.errcheck = _check_PmError
     return fn
@@ -118,7 +157,7 @@ Pm_WriteShort = _import('Pm_WriteShort', PmError,
 #  MidiOutput implementation
 # =============================================================================
 
-# TODO: check that all outputs are closed at the time Pm_Terminate is called
+# TODO: check that all MidiOutput are closed when Pm_Terminate is called
 Pm_Initialize()
 atexit.register(Pm_Terminate)
 
@@ -145,14 +184,18 @@ class MidiOutput:
             device_id = Pm_GetDefaultOutputDeviceID().value
         self.device_id = device_id
 
+        # Fetch strings from the PmDeviceInfo structure.
         device_info = Pm_GetDeviceInfo(device_id).contents
         self.device_name = device_info.name
         self.interface_name = device_info.interf
 
+        # In Python3, char_p fields are bytes() (not str() as in Python2),
+        # so we have to decode() them manually.
         if isinstance(self.device_name, bytes):
             self.device_name = self.device_name.decode('utf-8')
             self.interface_name = self.interface_name.decode('utf-8')
 
+        # Ban devices that don't support MIDI output.
         if not device_info.output:
             msg = "Can't create MidiOutput() on a non-output device: %s" % self
             raise MidiNoOutputException(msg)
@@ -201,6 +244,7 @@ class MidiOutput:
         Pm_Close(self.stream_ptr)
         del self.stream_ptr
 
+    # TODO: support writing more than 3-byte messages (SysEx, etc).
     def write(self, msg_3_bytes_tuple):
         status, data1, data2 = msg_3_bytes_tuple
         assert 0 <= status <= 0xFF
@@ -237,7 +281,7 @@ class MidiOutput:
 if __name__ == '__main__':
     from time import sleep
     for output in MidiOutput.discover():
-        print('playing few notes to: %s' % output)
+        print("playing few notes to: %s" % output)
         with output as o:
             sleep(1)
             o.write((0x90, 65, 127))  # 0x90 - Note ON
